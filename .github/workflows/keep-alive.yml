@@ -1,15 +1,15 @@
-name: ClawCloud Auto Login (GitHub Token)
+name: ClawCloud 自动登录保活
 
 on:
   schedule:
-    # 每5天运行一次 (UTC 时间早上6点)
+    # 每5天运行一次 (UTC 时间早上6点 = 北京时间下午2点)
     - cron: '0 6 */5 * *'
   workflow_dispatch:
     inputs:
       debug:
-        description: 'Enable debug mode'
+        description: '调试模式'
         required: false
-        default: 'false'
+        default: 'true'
         type: boolean
 
 jobs:
@@ -18,32 +18,34 @@ jobs:
     timeout-minutes: 10
     
     steps:
-      - name: Checkout repository
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: 设置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: 安装依赖
         run: |
-          pip install playwright
+          pip install playwright requests
           playwright install chromium
           playwright install-deps
 
-      - name: Run auto login
+      - name: 运行自动登录
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PAT: ${{ secrets.GH_PAT }}
-          DEBUG_MODE: ${{ inputs.debug }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          DEBUG_MODE: ${{ inputs.debug || 'true' }}
         run: python scripts/auto_login.py
 
-      - name: Upload debug artifacts
+      - name: 上传截图
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ github.run_number }}
+          name: 截图-${{ github.run_number }}
           path: |
             *.png
             *.json
